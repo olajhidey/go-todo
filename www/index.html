@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do Application</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      h1 {
+        text-align: center;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      form div {
+        margin-bottom: 10px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      input[type="date"] {
+        padding: 6px;
+      }
+      button {
+        padding: 10px 15px;
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin-bottom: 5px;
+      }
+      li.completed {
+        text-decoration: line-through;
+        background-color: #d4edda;
+      }
+      .delete-icon {
+        margin-left: 10px;
+        cursor: pointer;
+        color: #dc3545;
+      }
+      .delete-icon:hover {
+        color: #c82333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="container">
+      <h1>To-Do Application</h1>
+      <form @submit.prevent="addTodo">
+        <div>
+          <label for="title">Title</label>
+          <input type="text" v-model="newTodo.title" required />
+        </div>
+        <div>
+          <label for="description">Description</label>
+          <textarea v-model="newTodo.description" required></textarea>
+        </div>
+        <div>
+          <label for="completedDate">Completion Date</label>
+          <input type="date" v-model="newTodo.completedDate" required />
+        </div>
+        <button type="submit">Add To-Do</button>
+      </form>
+      <ul v-if="todos.length > 0">
+        <li
+          v-for="(todo, index) in todos"
+          :key="index"
+          :class="{ completed: todo.isCompleted }"
+        >
+          <div>
+            <strong>{{ todo.title }}</strong><br />
+            {{ todo.description }}<br />
+            Due: {{ todo.completedDate }}
+          </div>
+
+          <input
+            type="checkbox"
+            v-model="todo.isCompleted"
+            @change="toggleCheck(todo)"
+          />
+          <span class="delete-icon" @click="deleteTodo(todo,index)">🗑️</span>
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      createApp({
+        data() {
+          return {
+            newTodo: {
+              title: "",
+              description: "",
+              completedDate: "",
+              isCompleted: false,
+            },
+            todos: [],
+          };
+        },
+        mounted() {
+          this.getAllTodos();
+        },
+        methods: {
+          async addTodo() {
+            if (
+              this.newTodo.title &&
+              this.newTodo.description &&
+              this.newTodo.completedDate
+            ) {
+           
+
+              //save to db
+              const request = await axios.post("/api/todo/create", {
+                title: this.newTodo.title,
+                description: this.newTodo.description,
+                completedDate: this.newTodo.completedDate,
+                isCompleted: this.newTodo.isCompleted,
+              });
+
+              this.todos.push({ id:request.data.id, ...this.newTodo });
+
+              this.newTodo.title = "";
+              this.newTodo.description = "";
+              this.newTodo.completedDate = "";
+              this.newTodo.isCompleted = false;
+
+              console.log(request.data);
+            }
+          },
+          async deleteTodo(todo,index) {
+            this.todos.splice(index, 1);
+            let request = await axios.delete("/api/todo/delete/"+todo.id)
+            console.log(request.data)
+          },
+
+          async getAllTodos() {
+            let request = await axios.get("/api/todos");
+            this.todos = request.data;
+          },
+
+
+          async toggleCheck(todo) {
+
+            let request = await axios.put("/api/todo/update/"+todo.id, {
+                title: todo.title,
+                description: todo.description,
+                completedDate: todo.completedDate,
+                isCompleted: todo.isCompleted
+            })
+
+            console.log(request.data)
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
