@@ -94,7 +94,7 @@
         </div>
         <button type="submit">Add To-Do</button>
       </form>
-      <ul v-if="todos.length > 0">
+      <ul v-if="todos?.length > 0">
         <li
           v-for="(todo, index) in todos"
           :key="index"
@@ -122,13 +122,13 @@
       createApp({
         data() {
           return {
+            todos: [],
             newTodo: {
               title: "",
               description: "",
               completedDate: "",
               isCompleted: false,
             },
-            todos: [],
           };
         },
         mounted() {
@@ -141,7 +141,7 @@
               this.newTodo.description &&
               this.newTodo.completedDate
             ) {
-           
+              console.log(this.todos);
 
               //save to db
               const request = await axios.post("/api/todo/create", {
@@ -151,7 +151,7 @@
                 isCompleted: this.newTodo.isCompleted,
               });
 
-              this.todos.push({ id:request.data.id, ...this.newTodo });
+              this.todos.push({ id: request.data.id, ...this.newTodo });
 
               this.newTodo.title = "";
               this.newTodo.description = "";
@@ -161,28 +161,28 @@
               console.log(request.data);
             }
           },
-          async deleteTodo(todo,index) {
+          async deleteTodo(todo, index) {
             this.todos.splice(index, 1);
-            let request = await axios.delete("/api/todo/delete/"+todo.id)
-            console.log(request.data)
+            let request = await axios.delete("/api/todo/delete/" + todo.id);
+            console.log(request.data);
           },
 
           async getAllTodos() {
             let request = await axios.get("/api/todos");
-            this.todos = request.data;
+            if (request.data != null) {
+              this.todos = request.data;
+            }
           },
 
-
           async toggleCheck(todo) {
+            let request = await axios.put("/api/todo/update/" + todo.id, {
+              title: todo.title,
+              description: todo.description,
+              completedDate: todo.completedDate,
+              isCompleted: todo.isCompleted,
+            });
 
-            let request = await axios.put("/api/todo/update/"+todo.id, {
-                title: todo.title,
-                description: todo.description,
-                completedDate: todo.completedDate,
-                isCompleted: todo.isCompleted
-            })
-
-            console.log(request.data)
+            console.log(request.data);
           },
         },
       }).mount("#app");
